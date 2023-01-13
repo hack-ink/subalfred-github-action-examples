@@ -6,4 +6,4 @@
 3. make a pull request to the main branch
 4. check the GitHub action
 
-Also, check this [pull request](https://github.com/hack-ink/subalfred-github-action-examples/pull/1) example.
+Also, check this [pull request](https://github.com/hack-ink/subalfred-github-action-examples/pull/2) example.
