@@ -1,0 +1,76 @@
+name: Checks
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  preset:
+    name: Build and upload Polkadot
+    runs-on: ubuntu-latest
+    steps:
+      # I comment these for faster demonstration.
+      # You can fork and uncomment these things.
+      # Don't forget to remove the `Download` part.
+      #
+      # - name: Setup build environment
+      #   run: sudo apt install -y protobuf-compiler
+      # - name: Fetch latest code
+      #   uses: actions/checkout@v3
+      # - name: Build
+      #   run: |
+      #     cargo build --release --locked
+      #     mv target/release/polkadot .
+      - name: Download
+        run: |
+          curl -LO https://github.com/paritytech/polkadot/releases/download/v0.9.36/polkadot
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: polkadot
+          path: polkadot
+
+  features-checks:
+    name: Task check features
+    strategy:
+      matrix:
+        runtime: [runtime/polkadot, runtime/kusama]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check ${{ matrix.runtime }}
+        uses: hack-ink/subalfred-check-features-action@v0.1.5
+        with:
+          path: ${{ matrix.runtime }}
+
+  runtime-checks:
+    name: Task check runtimes
+    strategy:
+      matrix:
+        target:
+          [
+            { chain: polkadot-dev, compare-with: "https://rpc.polkadot.io" },
+            {
+              chain: kusama-dev,
+              compare-with: "https://kusama-rpc.polkadot.io",
+            },
+          ]
+    needs: [preset]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check ${{ matrix.target.chain }}
+        uses: hack-ink/subalfred-check-runtime-action@v0.1.7
+        with:
+          uploaded-artifact: polkadot
+          chain: ${{ matrix.target.chain }}
+          compare-with: ${{ matrix.target.compare-with }}
+
+  checks-cleaning:
+    name: Task checks cleaning
+    if: always()
+    needs: [features-checks, runtime-checks]
+    steps:
+      - name: Clean artifacts
+        uses: geekyeggo/delete-artifact@v1
+        with:
+          name: polkadot
+    runs-on: ubuntu-latest
